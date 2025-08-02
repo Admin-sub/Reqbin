@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reqbin (Proxy Mode)</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    textarea, select, input, button { width: 100%; margin-top: 0.5rem; font-size: 1rem; }
+    .response { white-space: pre-wrap; background: #f3f3f3; padding: 1rem; margin-top: 1rem; border-radius: 8px; }
+    .tabs button { margin-right: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h2>Reqbin (WebhookRelay Proxy)</h2>
+  <label>URL</label>
+  <input type="text" id="url" placeholder="https://example.com/api" />
+  <label>Method</label>
+  <select id="method">
+    <option>GET</option>
+    <option>POST</option>
+    <option>PUT</option>
+    <option>DELETE</option>
+  </select>
+  <label>Headers</label>
+  <textarea id="headers" rows="4" placeholder='{"Content-Type": "application/json"}'></textarea>
+  <label>Body</label>
+  <textarea id="body" rows="6" placeholder='{"key":"value"}'></textarea>
+  <button onclick="sendRequest()">Send</button>
+
+  <div class="tabs">
+    <button onclick="switchTab('raw')">RAW</button>
+    <button onclick="switchTab('json')">JSON</button>
+    <button onclick="switchTab('html')">HTML</button>
+  </div>
+
+  <div id="response" class="response">Response will appear here...</div>
+
+  <script>
+    let currentTab = 'raw';
+    const proxy = "https://01k1ntc8xh46qp56ff6z6tt6p5.hooks.webhookrelay.com";
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById("response").innerText = window.lastResponse || "No response yet.";
+    }
+
+    async function sendRequest() {
+      const url = document.getElementById("url").value;
+      const method = document.getElementById("method").value;
+      const headers = JSON.parse(document.getElementById("headers").value || "{}");
+      const body = document.getElementById("body").value;
+
+      const fullPayload = {
+        method: method,
+        url: url,
+        headers: headers,
+        body: body
+      };
+
+      const responseBox = document.getElementById("response");
+      responseBox.innerText = "Loading...";
+
+      try {
+        const res = await fetch(proxy, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(fullPayload)
+        });
+
+        const text = await res.text();
+        window.lastResponse = text;
+
+        if (currentTab === 'json') {
+          try {
+            const json = JSON.parse(text);
+            responseBox.innerText = JSON.stringify(json, null, 2);
+          } catch {
+            responseBox.innerText = "Invalid JSON:
+" + text;
+          }
+        } else if (currentTab === 'html') {
+          responseBox.innerText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        } else {
+          responseBox.innerText = text;
+        }
+
+      } catch (e) {
+        responseBox.innerText = "Error: " + e.toString();
+      }
+    }
+  </script>
+</body>
+</html>
